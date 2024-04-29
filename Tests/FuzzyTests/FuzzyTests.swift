@@ -1,6 +1,5 @@
-import Foundation
+import Fuzzy
 import XCTest
-@testable import Fuzzy
 
 final class FuzzyTests: XCTestCase {
     func testFindWithUnicode() {
@@ -115,8 +114,7 @@ final class FuzzyTests: XCTestCase {
             ]),
         ]
 
-        let ue4URL = Bundle.module.url(forResource: "ue4_filenames", withExtension: "txt")!
-        let ue4Filenames = try String(contentsOf: ue4URL).split(separator: "\n")
+        let ue4Filenames = try Fixtures.ue4Filenames()
 
         for testCase in testCases {
             let matches = find(pattern: testCase.pattern, in: ue4Filenames)
@@ -144,8 +142,7 @@ final class FuzzyTests: XCTestCase {
             ]),
         ]
 
-        let linuxURL = Bundle.module.url(forResource: "linux_filenames", withExtension: "txt")!
-        let linuxFilenames = try String(contentsOf: linuxURL).split(separator: "\n")
+        let linuxFilenames = try Fixtures.linuxFilenames()
 
         for testCase in testCases {
             let matches = find(pattern: testCase.pattern, in: linuxFilenames)
@@ -154,13 +151,6 @@ final class FuzzyTests: XCTestCase {
                 testCase.filenames,
                 line: testCase.line
             )
-        }
-    }
-
-    func testPerformanceExample() {
-        // Performance test
-        self.measure {
-            _ = find(pattern: "ue4", in: ["UE4Game.cpp", "UE4Build.cs", "UE4Game.Build.cs", "UE4BuildUtils.cs"])
         }
     }
 }
