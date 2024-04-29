@@ -33,7 +33,7 @@ final class FuzzyTests: XCTestCase {
             TestCase(
                 pattern: "mmt",
                 data: ["mémeTemps"],
-                expected: [Match(value: "mémeTemps", index: 0, matchedIndices: [0, 3, 5], score: 23)]
+                expected: [Match(value: "mémeTemps", index: 0, matchedIndices: [0, 2, 4], score: 24)]
             ),
             // Ranking
             TestCase(
@@ -120,7 +120,11 @@ final class FuzzyTests: XCTestCase {
 
         for testCase in testCases {
             let matches = find(pattern: testCase.pattern, in: ue4Filenames)
-            XCTAssertEqual(matches.count, testCase.matchesCount, line: testCase.line)
+            XCTAssertEqual(
+                matches.prefix(testCase.matchesCount).map { String($0.value) },
+                testCase.filenames,
+                line: testCase.line
+            )
         }
     }
 
@@ -145,7 +149,11 @@ final class FuzzyTests: XCTestCase {
 
         for testCase in testCases {
             let matches = find(pattern: testCase.pattern, in: linuxFilenames)
-            XCTAssertEqual(matches.count, testCase.matchesCount, line: testCase.line)
+            XCTAssertEqual(
+                matches.prefix(testCase.matchesCount).map { String($0.value) },
+                testCase.filenames,
+                line: testCase.line
+            )
         }
     }
 

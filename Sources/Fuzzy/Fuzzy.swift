@@ -75,27 +75,27 @@ where Collection: RandomAccessCollection,
     let patternRunes: [Character] = Array(pattern)
     var matches = [Match<Collection>]()
 
-    for i in data.indices {
-        let candidateElement = data[i]
-        var match = Match<Collection>(value: candidateElement, index: i, matchedIndices: [], score: 0)
+    for (i, dataRow) in zip(data.indices, data) {
+        var match = Match<Collection>(value: dataRow, index: i, matchedIndices: [], score: 0)
+        var patternIndex = patternRunes.startIndex
         var bestScore = -1
-        var matchedIndex = -1
+        var matchedIndex: Int?
         var currentAdjacentMatchBonus = 0
 
-        let candidateRunes = candidateElement.searchRepresentation
-        var lastIndex = data.endIndex
+        let candidateRunes = dataRow.searchRepresentation
+        var lastIndex = candidateRunes.startIndex
         var lastRune = Character("\0")
 
-        for (j, candidateRune) in candidateRunes.enumerated() {
-            if patternRunes.count > j && equalFold(candidateRune, patternRunes[j]) {
+        for (candidateIndex, candidateRune) in zip(candidateRunes.indices, candidateRunes) {
+            if equalFold(candidateRune, patternRunes[patternIndex]) {
                 var score = 0
-                if j == 0 {
+                if candidateIndex == candidateRunes.startIndex {
                     score += Bounus.firstCharMatch
                 }
                 if lastRune.isLowercase && candidateRune.isUppercase {
                     score += Bounus.camelCaseMatch
                 }
-                if j != 0 && isSeparator(lastRune) {
+                if candidateIndex != candidateRunes.startIndex && isSeparator(lastRune) {
                     score += Bounus.matchFollowingSeparator
                 }
                 if let lastMatch = match.matchedIndices.last {
@@ -109,26 +109,33 @@ where Collection: RandomAccessCollection,
                 }
                 if score > bestScore {
                     bestScore = score
-                    matchedIndex = j
+                    matchedIndex = candidateIndex
                 }
             }
 
-            lastIndex = j
+            if let matchedIndex {
+                let nextPattern = patternRunes[safe: patternIndex + 1]
+                let nextCandidate = candidateRunes[safe: candidateIndex + 1]
+                if equalFold(nextPattern, nextCandidate) || nextCandidate == nil {
+                    if match.matchedIndices.isEmpty {
+                        let penalty = matchedIndex * Penalty.unmatchedLeadingChar
+                        bestScore += max(penalty, Penalty.maxUnmatchedLeadingChar)
+                    }
+                    match.score += bestScore
+                    match.matchedIndices.append(matchedIndex)
+                    bestScore = -1
+                    patternIndex += 1
+                }
+            }
+
+            lastIndex = candidateIndex
             lastRune = candidateRune
         }
 
-        if matchedIndex != -1 {
-            match.matchedIndices.append(matchedIndex)
-            let penalty = matchedIndex * Penalty.unmatchedLeadingChar
-            let appliedPenalty = max(penalty, Penalty.maxUnmatchedLeadingChar)
-            match.score += bestScore
-            match.score += appliedPenalty
-        }
-
-        let unmatchedCharactersPenalty = candidateElement.searchRepresentation.count - pattern.count
+        let unmatchedCharactersPenalty = match.matchedIndices.count - candidateRunes.count
         match.score += unmatchedCharactersPenalty
 
-        if match.matchedIndices.count == pattern.count {
+        if match.matchedIndices.count == patternRunes.count {
             matches.append(match)
         }
     }
@@ -137,6 +144,11 @@ where Collection: RandomAccessCollection,
 }
 
 fileprivate func equalFold(_ lhs: Character, _ rhs: Character) -> Bool {
+    return lhs.lowercased() == rhs.lowercased()
+}
+
+fileprivate func equalFold(_ lhs: Character?, _ rhs: Character?) -> Bool {
+    guard let lhs, let rhs else { return false }
     return lhs.lowercased() == rhs.lowercased()
 }
 
@@ -150,4 +162,13 @@ fileprivate func adjacentCharBonus(index: Int, lastMatch: Int, currentBonus: Int
 fileprivate func isSeparator(_ character: Character) -> Bool {
     let separators: [Character] = ["/", "-", "_", " ", ".", "\\"]
     return separators.contains(character)
+}
+
+extension Array {
+    fileprivate subscript(safe index: Index) -> Element? {
+        guard self.indices.contains(index) else {
+            return nil
+        }
+        return self[index]
+    }
 }
