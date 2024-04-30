@@ -75,8 +75,10 @@ where Collection: RandomAccessCollection,
     let patternRunes: [Character] = Array(pattern)
     var matches = [Match<Collection>]()
 
-    for (i, dataRow) in zip(data.indices, data) {
-        var match = Match<Collection>(value: dataRow, index: i, matchedIndices: [], score: 0)
+    for i in data.indices {
+        let dataRow = data[i]
+        var matchedIndices: [Int] = []
+        var totalScore = 0
         var patternIndex = patternRunes.startIndex
         var bestScore = -1
         var matchedIndex: Int?
@@ -86,7 +88,8 @@ where Collection: RandomAccessCollection,
         var lastIndex = candidateRunes.startIndex
         var lastRune = Character("\0")
 
-        for (candidateIndex, candidateRune) in zip(candidateRunes.indices, candidateRunes) {
+        for candidateIndex in candidateRunes.indices {
+            let candidateRune = candidateRunes[candidateIndex]
             if equalFold(candidateRune, patternRunes[patternIndex]) {
                 var score = 0
                 if candidateIndex == candidateRunes.startIndex {
@@ -98,7 +101,7 @@ where Collection: RandomAccessCollection,
                 if candidateIndex != candidateRunes.startIndex && isSeparator(lastRune) {
                     score += Bounus.matchFollowingSeparator
                 }
-                if let lastMatch = match.matchedIndices.last {
+                if let lastMatch = matchedIndices.last {
                     let bonus = adjacentCharBonus(
                         index: lastIndex,
                         lastMatch: lastMatch,
@@ -117,12 +120,12 @@ where Collection: RandomAccessCollection,
                 let nextPattern = patternRunes[safe: patternIndex + 1]
                 let nextCandidate = candidateRunes[safe: candidateIndex + 1]
                 if equalFold(nextPattern, nextCandidate) || nextCandidate == nil {
-                    if match.matchedIndices.isEmpty {
+                    if matchedIndices.isEmpty {
                         let penalty = matchedIndex * Penalty.unmatchedLeadingChar
                         bestScore += max(penalty, Penalty.maxUnmatchedLeadingChar)
                     }
-                    match.score += bestScore
-                    match.matchedIndices.append(matchedIndex)
+                    totalScore += bestScore
+                    matchedIndices.append(matchedIndex)
                     bestScore = -1
                     patternIndex += 1
                 }
@@ -132,11 +135,11 @@ where Collection: RandomAccessCollection,
             lastRune = candidateRune
         }
 
-        let unmatchedCharactersPenalty = match.matchedIndices.count - candidateRunes.count
-        match.score += unmatchedCharactersPenalty
+        let unmatchedCharactersPenalty = matchedIndices.count - candidateRunes.count
+        totalScore += unmatchedCharactersPenalty
 
-        if match.matchedIndices.count == patternRunes.count {
-            matches.append(match)
+        if matchedIndices.count == patternRunes.count {
+            matches.append(.init(value: dataRow, index: i, matchedIndices: matchedIndices, score: totalScore))
         }
     }
 
@@ -149,7 +152,7 @@ fileprivate func equalFold(_ lhs: Character, _ rhs: Character) -> Bool {
 
 fileprivate func equalFold(_ lhs: Character?, _ rhs: Character?) -> Bool {
     guard let lhs, let rhs else { return false }
-    return lhs.lowercased() == rhs.lowercased()
+    return equalFold(lhs, rhs)
 }
 
 fileprivate func adjacentCharBonus(index: Int, lastMatch: Int, currentBonus: Int) -> Int {

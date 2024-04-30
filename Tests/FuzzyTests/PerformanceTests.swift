@@ -9,7 +9,7 @@ final class PerformanceTests: XCTestCase {
     func testUE4() throws {
         let ue4Filenames = try Fixtures.ue4Filenames()
 
-        self.measure {
+        measure {
             blackhole(find(pattern: "lll", in: ue4Filenames))
         }
     }
@@ -17,7 +17,7 @@ final class PerformanceTests: XCTestCase {
     func testLinux() throws {
         let linuxFilenames = try Fixtures.linuxFilenames()
 
-        self.measure {
+        measure {
             blackhole(find(pattern: "alsa", in: linuxFilenames))
         }
     }
