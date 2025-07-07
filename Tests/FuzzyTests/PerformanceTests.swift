@@ -7,7 +7,7 @@ fileprivate func blackhole(_ value: some Any) {
 
 final class PerformanceTests: XCTestCase {
     func testUE4() throws {
-        let ue4Filenames = try Fixtures.ue4Filenames()
+        let ue4Filenames = Fixtures.ue4Filenames
 
         measure {
             blackhole(find(pattern: "lll", in: ue4Filenames))
@@ -15,7 +15,7 @@ final class PerformanceTests: XCTestCase {
     }
 
     func testLinux() throws {
-        let linuxFilenames = try Fixtures.linuxFilenames()
+        let linuxFilenames = Fixtures.linuxFilenames
 
         measure {
             blackhole(find(pattern: "alsa", in: linuxFilenames))
