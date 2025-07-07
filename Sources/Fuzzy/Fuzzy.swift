@@ -21,7 +21,8 @@ public struct Match<Collection>: CustomDebugStringConvertible where Collection: 
     }
 }
 
-extension Match: Equatable where Match.Element: Equatable {}
+extension Match: Equatable where Element: Equatable {}
+extension Match: Sendable where Element: Sendable, Index: Sendable {}
 
 fileprivate enum Bounus {
     static let firstCharMatch = 10
